@@ -18,6 +18,14 @@ Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
+
+#====================手动调整最新版本=====================#
+new_version="v20200801"
+old_version="v20180909"
+
+
+
+
 #====================From Brook==========================#
 filepath=$(cd "$(dirname "$0")"; pwd)
 file_1=$(echo -e "${filepath}"|awk -F "$0" '{print $1}')
@@ -61,10 +69,10 @@ check_new_ver(){
 	" && echo
 	read -e -p "请输入数字 [1或2]:" ver_num
 	if [[ ${ver_num} == "1" ]]; then
-		brook_new_ver = "v20200801"
+		brook_new_ver = $new_version
 		echo -e "${Info} 开始下载 Brook [ ${brook_new_ver} ] 版本！"
 	elif [[ ${ver_num} == "2" ]]; then
-		brook_new_ver = "v20180909"
+		brook_new_ver = $old_version
 		echo -e "${Info} 开始下载 Brook [ ${brook_new_ver} ] 版本！"
 	else
 		echo -e "${Error} 请输入正确的数字(1或者2)" 
@@ -74,6 +82,7 @@ check_new_ver(){
 Download_brook(){
 	[[ ! -e ${file} ]] && mkdir ${file}
 	cd ${file}
+	bit=`uname -m`
 	if [[ ${bit} == "x86_64" ]]; then
 		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_new_ver}/brook"
 	else
