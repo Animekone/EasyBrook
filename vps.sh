@@ -19,10 +19,9 @@ Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
 
-
-
-
-
+#====================手动调整最新版本=====================#
+	new_version="v20200801"
+	old_version="v20180909"
 
 #====================From Brook==========================#
 filepath=$(cd "$(dirname "$0")"; pwd)
@@ -66,23 +65,17 @@ check_new_ver(){
 	${Green_font_prefix}2.${Font_color_suffix}  选择旧版本
 	" && echo
 
-#====================手动调整最新版本=====================#
-	# new_version="v20200801"
-	# old_version="v20180909"
-
 	read -e -p "请输入数字 [1或2]:" ver_num
 	if [[ ${ver_num} == "1" ]]; then
-		brook_version = "v20200801"
+		brook_version=${new_version}
 		echo "${brook_version}"
 		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
 	elif [[ ${ver_num} == "2" ]]; then
-		brook_version = "v20180909"
+		brook_version=${old_version}
 		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
 	else
 		echo -e "${Error} 请输入正确的数字(1或者2)" 
 	fi
-	echo "${brook_version}"
-	exit 1 #set the breakpoint
 }
 
 Download_brook(){
