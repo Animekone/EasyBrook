@@ -603,12 +603,12 @@ else
   ---- Toyo | doub.io/wlzy-jc37 ----
 
 ————————————
- ${Green_font_prefix} 1.${Font_color_suffix} 安装 Brook
- ${Green_font_prefix} 3.${Font_color_suffix} 卸载 Brook
+#  ${Green_font_prefix} 1.${Font_color_suffix} 安装 Brook
+#  ${Green_font_prefix} 3.${Font_color_suffix} 卸载 Brook
 ————————————
- ${Green_font_prefix} 4.${Font_color_suffix} 启动 Brook
- ${Green_font_prefix} 5.${Font_color_suffix} 停止 Brook
- ${Green_font_prefix} 6.${Font_color_suffix} 重启 Brook
+#  ${Green_font_prefix} 4.${Font_color_suffix} 启动 Brook
+#  ${Green_font_prefix} 5.${Font_color_suffix} 停止 Brook
+#  ${Green_font_prefix} 6.${Font_color_suffix} 重启 Brook
 ————————————
  ${Green_font_prefix} 7.${Font_color_suffix} 设置 Brook 端口转发
  ${Green_font_prefix} 8.${Font_color_suffix} 查看 Brook 端口转发
@@ -628,21 +628,21 @@ fi
 echo
 read -e -p " 请输入数字 [0-10]:" num
 case "$num" in
-	1)
-	Install_brook
+	# 1)
+	# Install_brook
 	;;
-	3)
-	Uninstall_brook
-	;;
-	4)
-	Start_brook
-	;;
-	5)
-	Stop_brook
-	;;
-	6)
-	Restart_brook
-	;;
+	# 3)
+	# Uninstall_brook
+	# ;;
+	# 4)
+	# Start_brook
+	# ;;
+	# 5)
+	# Stop_brook
+	# ;;
+	# 6)
+	# Restart_brook
+	# ;;
 	7)
 	Set_brook
 	;;
