@@ -65,17 +65,22 @@ check_new_ver(){
 	${Green_font_prefix}1.${Font_color_suffix}  选择最新版本
 	${Green_font_prefix}2.${Font_color_suffix}  选择旧版本
 	" && echo
+
+#====================手动调整最新版本=====================#
+	# new_version="v20200801"
+	# old_version="v20180909"
+
 	read -e -p "请输入数字 [1或2]:" ver_num
 	if [[ ${ver_num} == "1" ]]; then
-		brook_new_ver = $new_version
-		echo -e "${Info} 开始下载 Brook [ ${brook_new_ver} ] 版本！"
+		brook_version = "v20200801"
+		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
 	elif [[ ${ver_num} == "2" ]]; then
-		brook_new_ver = $old_version
-		echo -e "${Info} 开始下载 Brook [ ${brook_new_ver} ] 版本！"
+		brook_version = "v20180909"
+		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
 	else
 		echo -e "${Error} 请输入正确的数字(1或者2)" 
 	fi
-	echo ${brook_new_ver}+"  new:"+${new_version}+"  old:"+${old_version}
+	echo "====:"${brook_version}
 	exit 1 #set the breakpoint
 }
 
@@ -84,9 +89,9 @@ Download_brook(){
 	cd ${file}
 	bit=`uname -m`
 	if [[ ${bit} == "x86_64" ]]; then
-		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_new_ver}/brook"
+		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook"
 	else
-		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_new_ver}/brook_linux_386"
+		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook_linux_386"
 		mv brook_linux_386 brook
 	fi
 	[[ ! -e "brook" ]] && echo -e "${Error} Brook 下载失败 !" && exit 1
@@ -423,9 +428,6 @@ Modify_Enabled_pf(){
 	fi
 }
 Install_brook(){
-	#====================手动调整最新版本=====================#
-	new_version="v20200801"
-	old_version="v20180909"
 	check_root
 	[[ -e ${brook_file} ]] && echo -e "${Error} 检测到 Brook 已安装 !" && exit 1
 	echo -e "${Info} 开始安装/配置 依赖..."
