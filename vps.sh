@@ -759,8 +759,8 @@ ${Green_font_prefix}13.${Font_color_suffix} 退出脚本
 		
 	fi
 echo
-read -p " 请输入数字 [0-11]:" num
-case "$num" in
+read -p " 请输入数字 [0-11]:" service_num
+case "$service_num" in
 	0)
 	check_sys_bbrplus
 	;;
@@ -806,7 +806,6 @@ case "$num" in
 	;;
 	*)
 	echo "请输入正确数字 [0-13]"
-	;;
 	clear
 	sleep 2s
 	start_menu
