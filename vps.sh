@@ -759,7 +759,7 @@ ${Green_font_prefix}13.${Font_color_suffix} 退出脚本
 		
 	fi
 echo
-read -p " 请输入数字 [0-11]:" service_num
+read -e -p " 请输入数字 [0-11]:" service_num
 case "$service_num" in
 	0)
 	check_sys_bbrplus
