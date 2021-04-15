@@ -73,6 +73,7 @@ check_new_ver(){
 	read -e -p "请输入数字 [1或2]:" ver_num
 	if [[ ${ver_num} == "1" ]]; then
 		brook_version = "v20200801"
+		echo "${brook_version}"
 		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
 	elif [[ ${ver_num} == "2" ]]; then
 		brook_version = "v20180909"
@@ -80,7 +81,7 @@ check_new_ver(){
 	else
 		echo -e "${Error} 请输入正确的数字(1或者2)" 
 	fi
-	echo "====:"${brook_version}
+	echo "${brook_version}"
 	exit 1 #set the breakpoint
 }
 
