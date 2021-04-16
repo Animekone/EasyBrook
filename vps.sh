@@ -806,7 +806,7 @@ ${Green_font_prefix} 12.${Font_color_suffix} 查看 Brook 日志
 ${Green_font_prefix} 13.${Font_color_suffix} 监控 Brook 运行状态
 
 ———————————— 服务商连通性测试 | 代理管理 ————————————
-${Green_font_prefix} 14.${Font_color_suffix} 监控 Brook 运行状态
+${Green_font_prefix} 15.${Font_color_suffix} 测试跳板机到服务商服务连通性
 
 
 ${Green_font_prefix} 15.${Font_color_suffix} 退出脚本
