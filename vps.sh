@@ -238,6 +238,50 @@ check_port(){
 		return 1
 	fi
 }
+Check_Proxy_Geo(){
+	#安装curl jq 解析网络
+	if [[ ${release} == "centos" ]]; then
+			yum install curl jq -y
+	else
+			apt-get install curl jq -y
+	fi
+	echo -e "====当前已设置Brook转发情况===="
+	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
+	if [[ -z "${user_all}" ]]; then
+		echo -e "${Info} 目前 Brook 配置文件中用户配置为空。" && exit 1
+	else
+		user_num=$(echo -e "${user_all}"|wc -l) #端口个数
+		for((integer = 1; integer <= ${user_num}; integer++)) 
+		do
+			user_port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
+			user_ip_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $2}')
+			user_port_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $3}')
+			user_Enabled_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $4}')
+			raw_json=$(curl -sb -v -x socks5h://localhost:${user_port} https://ipapi.co/json)
+			echo ${raw_json} #set the breakpoint
+			cur_ip=$(echo "${raw_json}" | jq -r '.ip')
+			cur_country_code=$(echo "${raw_json}" | jq -r '.country_code')
+			cur_country_name=$(echo "${raw_json}" | jq -r '.country_name')
+			cur_region=$(echo "${raw_json}" | jq -r '.region')
+			cur_city=$(echo "${raw_json}" | jq -r '.city')
+			cur_timezone=$(echo "${raw_json}" | jq -r '.timezone')
+			cur_lanaguage=$(echo "${raw_json}" | jq -r '.languages')
+
+			if [[ ${user_Enabled_pf} == "0" ]]; then
+				user_Enabled_pf_1="${Red_font_prefix}禁用${Font_color_suffix}"
+			else
+				user_Enabled_pf_1="${Green_font_prefix}启用${Font_color_suffix}"
+			fi
+			user_list_all=${user_list_all}"本地端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix} 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix} 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix} 状态: ${user_Enabled_pf_1} cur_ip：${cur_ip} - cur_country_code：${cur_country_code} - cur_country_name ${cur_country_name}\n"
+			user_IP=""
+		done
+		echo -e "${user_list_all}"
+		echo -e "========================\n"
+	fi
+
+}
+
+
 list_port(){
 	port_Type=$1
 	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
@@ -761,7 +805,11 @@ ${Green_font_prefix} 11.${Font_color_suffix} 查看 Brook 端口转发列表
 ${Green_font_prefix} 12.${Font_color_suffix} 查看 Brook 日志
 ${Green_font_prefix} 13.${Font_color_suffix} 监控 Brook 运行状态
 
-${Green_font_prefix} 14.${Font_color_suffix} 退出脚本
+———————————— 服务商连通性测试 | 代理管理 ————————————
+${Green_font_prefix} 14.${Font_color_suffix} 监控 Brook 运行状态
+
+
+${Green_font_prefix} 15.${Font_color_suffix} 退出脚本
 ————————————————————————————————" && echo
 
 	check_status
@@ -805,7 +853,7 @@ case "$service_num" in
 	Set_brook
 	;;
 	11)
-	check_installed_status
+	check_installed_status  
 	list_port
 	;;
 	12)
@@ -815,6 +863,9 @@ case "$service_num" in
 	Set_crontab_monitor_brook
 	;;
 	14)
+	Check_Proxy_Geo
+	;;
+	15)
 	exit 1
 	;;
 	*)
