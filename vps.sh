@@ -436,7 +436,7 @@ Install_brook(){
 	echo "" > ${brook_conf}
 	echo -e "${Info} 开始设置 iptables防火墙..."
 	Set_iptables
-	echo -e "${Info} Brook 安装完成！默认配置文件为空，请选择 [7.设置 Brook 端口转发 - 1.添加 端口转发] 来添加端口转发。"
+	echo -e "${Info} Brook 安装完成！默认配置文件为空，请选择 [9.设置 Brook 端口转发 - 1.添加 端口转发] 来添加端口转发。"
 }
 Start_brook(){
 	check_installed_status
@@ -738,25 +738,25 @@ echo && echo -e " TCP加速 一键安装管理脚本 ${Red_font_prefix}[v${sh_ve
   -- 一起搞钱 | AhYuan --
   
 ———————————— 安装 BBRplus | 加速管理 ————————————
- ${Green_font_prefix}0.${Font_color_suffix} 安装 BBRplus版内核 
- ${Green_font_prefix}1.${Font_color_suffix} 使用 BBRplus版加速
- ${Green_font_prefix}2.${Font_color_suffix} 卸载 全部加速
- ${Green_font_prefix}3.${Font_color_suffix} 系统配置优化
+ ${Green_font_prefix}1.${Font_color_suffix} 安装 BBRplus版内核 
+ ${Green_font_prefix}2.${Font_color_suffix} 使用 BBRplus版加速
+ ${Green_font_prefix}3.${Font_color_suffix} 卸载 全部加速
+ ${Green_font_prefix}4.${Font_color_suffix} 系统配置优化
  
 ———————————— 安装 Brook | 线路搭建管理 ————————————
-${Green_font_prefix} 4.${Font_color_suffix} 安装 Brook
-${Green_font_prefix} 5.${Font_color_suffix} 卸载 Brook
-${Green_font_prefix} 6.${Font_color_suffix} 启动 Brook
-${Green_font_prefix} 7.${Font_color_suffix} 停止 Brook
-${Green_font_prefix} 8.${Font_color_suffix} 重启 Brook
+${Green_font_prefix} 5.${Font_color_suffix} 安装 Brook
+${Green_font_prefix} 6.${Font_color_suffix} 卸载 Brook
+${Green_font_prefix} 7.${Font_color_suffix} 启动 Brook
+${Green_font_prefix} 8.${Font_color_suffix} 停止 Brook
+${Green_font_prefix} 9.${Font_color_suffix} 重启 Brook
 
 ———————————— 管理端口加速 | 端口服务管理 ————————————
-${Green_font_prefix} 9.${Font_color_suffix} 设置 Brook 端口转发
-${Green_font_prefix}10.${Font_color_suffix} 查看 Brook 端口转发
-${Green_font_prefix}11.${Font_color_suffix} 查看 Brook 日志
-${Green_font_prefix}12.${Font_color_suffix} 监控 Brook 运行状态
+${Green_font_prefix} 10.${Font_color_suffix} 设置 Brook 端口转发
+${Green_font_prefix} 11.${Font_color_suffix} 查看 Brook 端口转发
+${Green_font_prefix} 12.${Font_color_suffix} 查看 Brook 日志
+${Green_font_prefix} 13.${Font_color_suffix} 监控 Brook 运行状态
  
-${Green_font_prefix}13.${Font_color_suffix} 退出脚本
+${Green_font_prefix} 14.${Font_color_suffix} 退出脚本
 ————————————————————————————————" && echo
 
 	check_status
@@ -767,49 +767,49 @@ ${Green_font_prefix}13.${Font_color_suffix} 退出脚本
 		
 	fi
 echo
-read -e -p " 请输入数字 [0-11]:" service_num
+read -e -p " 请输入数字 [1-14]:" service_num
 case "$service_num" in
-	0)
+	1)
 	check_sys_bbrplus
 	;;
-	1)
+	2)
 	startbbrplus
 	;;
-	2)
+	3)
 	remove_all
 	;;
-	3)
+	4)
 	optimizing_system
 	;;
-	4)
+	5)
 	Install_brook
 	;;
-	5)
+	6)
 	Uninstall_brook
 	;;
-	6)
+	7)
 	Start_brook
 	;;
-	7)
+	8)
 	Stop_brook
 	;;
-	8)
+	9)
 	Restart_brook
 	;;	
-	9)
+	10)
 	Set_brook
 	;;
-	10)
+	11)
 	check_installed_status
 	list_port
 	;;
-	11)
+	12)
 	View_Log
 	;;
-	12)
+	13)
 	Set_crontab_monitor_brook
 	;;
-	13)
+	14)
 	exit 1
 	;;
 	*)
