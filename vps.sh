@@ -272,7 +272,7 @@ Check_Proxy_Geo(){
 			else
 				user_Enabled_pf_1="${Green_font_prefix}启用${Font_color_suffix}"
 			fi
-			user_list_all=${user_list_all}"本地端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix} 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix} 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix} 状态: ${user_Enabled_pf_1} cur_ip：${cur_ip} - cur_country_code：${cur_country_code} - cur_country_name ${cur_country_name}\n"
+			user_list_all=${user_list_all}"本地端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix} 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix} 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix} 状态: ${user_Enabled_pf_1} 当前IP：${Green_font_prefix}"${cur_ip}"${Font_color_suffix}  国家代码：${Green_font_prefix}"${cur_country_code}"${Font_color_suffix}  国家：${Green_font_prefix}"${cur_country_name}"${Font_color_suffix} 郡Region：${Green_font_prefix}"${cur_region}"${Font_color_suffix}   城市：${Green_font_prefix}"${cur_city}"${Font_color_suffix}  时区：${Green_font_prefix}"${cur_timezone}"${Font_color_suffix}  语言：${Green_font_prefix}"${cur_lanaguage}"${Font_color_suffix}\n"
 			user_IP=""
 		done
 		echo -e "${user_list_all}"
