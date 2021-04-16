@@ -264,6 +264,7 @@ list_port(){
 			user_IP=""
 		done
 		ip=$(wget -qO- -t1 -T2 ipinfo.io/ip)
+
 		if [[ -z "${ip}" ]]; then
 			ip=$(wget -qO- -t1 -T2 api.ip.sb/ip)
 			if [[ -z "${ip}" ]]; then
@@ -756,10 +757,10 @@ ${Green_font_prefix} 9.${Font_color_suffix} 重启 Brook
 
 ———————————— 管理端口加速 | 端口服务管理 ————————————
 ${Green_font_prefix} 10.${Font_color_suffix} 设置 Brook 端口转发
-${Green_font_prefix} 11.${Font_color_suffix} 查看 Brook 端口转发
+${Green_font_prefix} 11.${Font_color_suffix} 查看 Brook 端口转发列表
 ${Green_font_prefix} 12.${Font_color_suffix} 查看 Brook 日志
 ${Green_font_prefix} 13.${Font_color_suffix} 监控 Brook 运行状态
- 
+
 ${Green_font_prefix} 14.${Font_color_suffix} 退出脚本
 ————————————————————————————————" && echo
 
