@@ -176,8 +176,8 @@ Set_port(){
 }
 Set_IP_pf(){
 	echo "请输入被转发的 IP :"
-	read -e -p "(默认取消):" bk_ip_pf
-	[[ -z "${bk_ip_pf}" ]] && echo "已取消..." && exit 1
+	read -e -p "(默认回车使用starvpn地址,Lte请手动输入):" bk_ip_pf
+	[[ -z "${bk_ip_pf}" ]] && bk_ip_pf="proxy.starhome.io"
 	echo && echo "========================"
 	echo -e "	被转发IP : ${Red_background_prefix} ${bk_ip_pf} ${Font_color_suffix}"
 	echo "========================" && echo
@@ -297,15 +297,19 @@ Add_pf(){
 			Add_iptables
 			Save_iptables
 			echo -e "${Info} 端口转发 添加成功 ${Green_font_prefix}[端口: ${bk_port} 被转发IP和端口: ${bk_ip_pf}:${bk_port_pf}]${Font_color_suffix}\n"
-			read -e -p "是否继续 添加端口转发配置？[Y/n]:" addyn
-			[[ -z ${addyn} ]] && addyn="y"
-			if [[ ${addyn} == [Nn] ]]; then
-				Restart_brook
-				break
-			else
-				echo -e "${Info} 继续 添加端口转发配置..."
-				user_list_all=""
-			fi
+			
+			#=======默认添加一个端口立即启动这个转发=============#
+			# read -e -p "是否继续 添加端口转发配置？[Y/n]:" addyn
+			# [[ -z ${addyn} ]] && addyn="y"
+			# if [[ ${addyn} == [Nn] ]]; then
+			# 	Restart_brook
+			# 	break
+			# else
+			# 	echo -e "${Info} 继续 添加端口转发配置..."
+			# 	user_list_all=""
+			# fi
+			Restart_brook
+			break
 		fi
 	done
 }
@@ -960,8 +964,6 @@ check_status(){
 		kernel_status="BBRplus"
 	elif [[ ${kernel_version} = "3.10.0" || ${kernel_version} = "3.16.0" || ${kernel_version} = "3.2.0" || ${kernel_version} = "4.4.0" || ${kernel_version} = "3.13.0"  || ${kernel_version} = "2.6.32" || ${kernel_version} = "4.9.0" ]]; then
 		kernel_status="Lotserver"
-	elif [[ `echo ${kernel_version} | awk -F'.' '{print $1}'` == "4" ]] && [[ `echo ${kernel_version} | awk -F'.' '{print $2}'` -ge 9 ]] || [[ `echo ${kernel_version} | awk -F'.' '{print $1}'` == "5" ]]; then
-		kernel_status="BBR"
 	else 
 		kernel_status="noinstall"
 	fi
@@ -973,32 +975,6 @@ check_status(){
 				run_status="启动成功"
 			else 
 				run_status="启动失败"
-			fi
-		else 
-			run_status="未安装加速模块"
-		fi
-	elif [[ ${kernel_status} == "BBR" ]]; then
-		run_status=`grep "net.ipv4.tcp_congestion_control" /etc/sysctl.conf | awk -F "=" '{print $2}'`
-		if [[ ${run_status} == "bbr" ]]; then
-			run_status=`lsmod | grep "bbr" | awk '{print $1}'`
-			if [[ ${run_status} == "tcp_bbr" ]]; then
-				run_status="BBR启动成功"
-			else 
-				run_status="BBR启动失败"
-			fi
-		elif [[ ${run_status} == "tsunami" ]]; then
-			run_status=`lsmod | grep "tsunami" | awk '{print $1}'`
-			if [[ ${run_status} == "tcp_tsunami" ]]; then
-				run_status="BBR魔改版启动成功"
-			else 
-				run_status="BBR魔改版启动失败"
-			fi
-		elif [[ ${run_status} == "nanqinlang" ]]; then
-			run_status=`lsmod | grep "nanqinlang" | awk '{print $1}'`
-			if [[ ${run_status} == "tcp_nanqinlang" ]]; then
-				run_status="暴力BBR魔改版启动成功"
-			else 
-				run_status="暴力BBR魔改版启动失败"
 			fi
 		else 
 			run_status="未安装加速模块"
