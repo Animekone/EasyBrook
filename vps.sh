@@ -258,7 +258,7 @@ Check_Proxy_Geo(){
 			user_port_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $3}')
 			user_Enabled_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $4}')
 			raw_json=$(curl -sb -v -x socks5h://localhost:${user_port} https://ipapi.co/json)
-			echo ${raw_json} #set the breakpoint
+			# echo ${raw_json} #set the breakpoint
 			cur_ip=$(echo "${raw_json}" | jq -r '.ip')
 			cur_country_code=$(echo "${raw_json}" | jq -r '.country_code')
 			cur_country_name=$(echo "${raw_json}" | jq -r '.country_name')
@@ -283,6 +283,13 @@ Check_Proxy_Geo(){
 
 
 list_port(){
+	#安装curl访问网站
+	if [[ ${release} == "centos" ]]; then
+			yum install curl jq -y
+	else
+			apt-get install curl jq -y
+	fi
+	
 	port_Type=$1
 	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
 	if [[ -z "${user_all}" ]]; then
@@ -307,16 +314,10 @@ list_port(){
 			user_list_all=${user_list_all}"本地监听端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix}\t 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix}\t 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix}\t 状态: ${user_Enabled_pf_1}\n"
 			user_IP=""
 		done
-		ip=$(wget -qO- -t1 -T2 ipinfo.io/ip)
-
+		raw_ip=$(curl -sb -v http://ip-api.com/json?fields=query)
+		ip=$(echo "${raw_ip}" | jq -r '.query')
 		if [[ -z "${ip}" ]]; then
-			ip=$(wget -qO- -t1 -T2 api.ip.sb/ip)
-			if [[ -z "${ip}" ]]; then
-				ip=$(wget -qO- -t1 -T2 members.3322.org/dyndns/getip)
-				if [[ -z "${ip}" ]]; then
-					ip="VPS_IP"
-				fi
-			fi
+			echo -e "请求ip-api失败 请稍后再试."
 		fi
 		echo -e "当前端口转发总数: ${Green_background_prefix} "${user_num}" ${Font_color_suffix} 当前服务器IP: ${Green_background_prefix} "${ip}" ${Font_color_suffix}"
 		echo -e "${user_list_all}"
@@ -806,7 +807,7 @@ ${Green_font_prefix} 12.${Font_color_suffix} 查看 Brook 日志
 ${Green_font_prefix} 13.${Font_color_suffix} 监控 Brook 运行状态
 
 ———————————— 服务商连通性测试 | 代理管理 ————————————
-${Green_font_prefix} 15.${Font_color_suffix} 测试跳板机到服务商服务连通性
+${Green_font_prefix} 14.${Font_color_suffix} 测试跳板机到服务商服务连通性
 
 
 ${Green_font_prefix} 15.${Font_color_suffix} 退出脚本
