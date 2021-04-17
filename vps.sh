@@ -240,11 +240,11 @@ check_port(){
 }
 Check_Proxy_Geo(){
 	#安装curl jq 解析网络
-	if [[ ${release} == "centos" ]]; then
-			yum install curl jq -y
-	else
-			apt-get install curl jq -y
-	fi
+	# if [[ ${release} == "centos" ]]; then
+	# 		yum install curl jq -y
+	# else
+	# 		apt-get install curl jq -y
+	# fi
 	echo -e "====当前已设置Brook转发情况===="
 	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
 	if [[ -z "${user_all}" ]]; then
@@ -314,10 +314,15 @@ list_port(){
 			user_list_all=${user_list_all}"本地监听端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix}\t 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix}\t 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix}\t 状态: ${user_Enabled_pf_1}\n"
 			user_IP=""
 		done
-		raw_ip=$(curl -sb -v http://ip-api.com/json?fields=query)
-		ip=$(echo "${raw_ip}" | jq -r '.query')
+		ip=$(wget -qO- -t1 -T2 ipinfo.io/ip)
 		if [[ -z "${ip}" ]]; then
-			echo -e "请求ip-api失败 请稍后再试."
+			ip=$(wget -qO- -t1 -T2 api.ip.sb/ip)
+			if [[ -z "${ip}" ]]; then
+				ip=$(wget -qO- -t1 -T2 members.3322.org/dyndns/getip)
+				if [[ -z "${ip}" ]]; then
+					ip="VPS_IP"
+				fi
+			fi
 		fi
 		echo -e "当前端口转发总数: ${Green_background_prefix} "${user_num}" ${Font_color_suffix} 当前服务器IP: ${Green_background_prefix} "${ip}" ${Font_color_suffix}"
 		echo -e "${user_list_all}"
