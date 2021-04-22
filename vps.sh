@@ -20,7 +20,7 @@ Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
 
 #====================手动调整最新版本=====================#
-	new_version="v20200801"
+	new_version="v20210401"
 	old_version="v20180909"
 
 #====================From Brook==========================#
@@ -60,7 +60,7 @@ check_pid(){
 }
 
 check_new_ver(){
-	echo && echo -e "最新版本为[v20200801]适合LTE Proxy; 旧版本为[v20180909]适合StarVPN.
+	echo && echo -e "最新版本为[v20210401]适合LTE Proxy; 旧版本为[v20180909]适合StarVPN.
 	${Green_font_prefix}1.${Font_color_suffix}  选择最新版本
 	${Green_font_prefix}2.${Font_color_suffix}  选择旧版本
 	" && echo
@@ -82,8 +82,12 @@ Download_brook(){
 	[[ ! -e ${file} ]] && mkdir ${file}
 	cd ${file}
 	bit=`uname -m`
+
+	https://github.com/txthinking/brook/releases/download/v20210401/brook_linux_amd64
 	if [[ ${bit} == "x86_64" ]]; then
-		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook"
+		# wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook"
+		# 								https://github.com/txthinking/brook/releases/download/v20210401/brook_linux_amd64
+		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook_linux_amd64"
 	else
 		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook_linux_386"
 		mv brook_linux_386 brook
