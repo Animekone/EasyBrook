@@ -88,6 +88,7 @@ Download_brook(){
 		# wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook"
 		# 								https://github.com/txthinking/brook/releases/download/v20210401/brook_linux_amd64
 		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook_linux_amd64"
+		mv brook_linux_amd64 brook
 	else
 		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook_linux_386"
 		mv brook_linux_386 brook
