@@ -82,7 +82,6 @@ Download_brook(){
 	[[ ! -e ${file} ]] && mkdir ${file}
 	cd ${file}
 	bit=`uname -m`
-	# https://github.com/txthinking/brook/releases/download/v20210401/brook_linux_amd64
 	if [[ ${bit} == "x86_64" ]]; then
 		# wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook"
 		# 								https://github.com/txthinking/brook/releases/download/v20210401/brook_linux_amd64
