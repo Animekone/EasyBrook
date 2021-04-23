@@ -30,6 +30,8 @@ brook_file="/usr/local/brook-pf/brook"
 brook_conf="/usr/local/brook-pf/brook.conf"
 brook_log="/usr/local/brook-pf/brook.log"
 Crontab_file="/usr/bin/crontab"
+Curl_file="/usr/bin/curl"
+JQ_file="/usr/bin/jq"
 
 check_root(){
 	[[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
@@ -222,12 +224,6 @@ check_port(){
 	fi
 }
 Check_Proxy_Geo(){
-	#安装curl jq 解析网络
-	# if [[ ${release} == "centos" ]]; then
-	# 		yum install curl jq -y
-	# else
-	# 		apt-get install curl jq -y
-	# fi
 	echo -e "====当前已设置Brook转发情况===="
 	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
 	if [[ -z "${user_all}" ]]; then
@@ -266,13 +262,32 @@ Check_Proxy_Geo(){
 
 
 list_port(){
-	#安装curl访问网站
-	if [[ ${release} == "centos" ]]; then
-			yum install curl jq -y
-	else
-			apt-get install curl jq -y
+	if [[ ! -e ${Curl_file} ]]; then
+		echo -e "${Error} Curl 没有安装，开始安装..."
+		if [[ ${release} == "centos" ]]; then
+			yum install curl -y
+		else
+			apt-get install curl -y
+		fi
+		if [[ ! -e ${Curl_file} ]]; then
+			echo -e "${Error} Curl 安装失败，请记得检查！" 
+		else
+			echo -e "${Info} Curl 安装成功！"
+		fi
 	fi
-	
+	if [[ ! -e ${JQ_file} ]]; then
+		echo -e "${Error} jq json解析工具 没有安装，开始安装..."
+		if [[ ${release} == "centos" ]]; then
+			yum install jq -y
+		else
+			apt-get install jq -y
+		fi
+		if [[ ! -e ${JQ_file} ]]; then
+			echo -e "${Error} jq  安装失败，请记得检查！" 
+		else
+			echo -e "${Info} jq 安装成功！"
+		fi
+	fi
 	port_Type=$1
 	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
 	if [[ -z "${user_all}" ]]; then
