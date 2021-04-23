@@ -20,8 +20,7 @@ Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
 
 #====================手动调整最新版本=====================#
-	new_version="v20210401"
-	old_version="v20180909"
+brook_version="v20210401"
 
 #====================From Brook==========================#
 filepath=$(cd "$(dirname "$0")"; pwd)
@@ -59,25 +58,6 @@ check_pid(){
 	PID=$(ps -ef| grep "brook relays"| grep -v grep| grep -v ".sh"| grep -v "init.d"| grep -v "service"| awk '{print $2}')
 }
 
-check_new_ver(){
-	echo && echo -e "最新版本为[v20210401]适合LTE Proxy; 旧版本为[v20180909]适合StarVPN.
-	${Green_font_prefix}1.${Font_color_suffix}  选择最新版本
-	${Green_font_prefix}2.${Font_color_suffix}  选择旧版本
-	" && echo
-
-	read -e -p "请输入数字 [1或2]:" ver_num
-	if [[ ${ver_num} == "1" ]]; then
-		brook_version=${new_version}
-		echo "${brook_version}"
-		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
-	elif [[ ${ver_num} == "2" ]]; then
-		brook_version=${old_version}
-		echo -e "${Info} 开始下载 Brook [ ${brook_version} ] 版本！"
-	else
-		echo -e "${Error} 请输入正确的数字(1或者2)" 
-	fi
-}
-
 Download_brook(){
 	[[ ! -e ${file} ]] && mkdir ${file}
 	cd ${file}
@@ -85,7 +65,6 @@ Download_brook(){
 	if [[ ${bit} == "x86_64" ]]; then
 		# wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook"
 		# 								https://github.com/txthinking/brook/releases/download/v20210401/brook_linux_amd64
-		echo -e "1234"
 		wget --no-check-certificate -N "https://github.com/txthinking/brook/releases/download/${brook_version}/brook_linux_amd64"
 		mv brook_linux_amd64 brook
 	else
@@ -352,17 +331,6 @@ Add_pf(){
 			Add_iptables
 			Save_iptables
 			echo -e "${Info} 端口转发 添加成功 ${Green_font_prefix}[端口: ${bk_port} 被转发IP和端口: ${bk_ip_pf}:${bk_port_pf}]${Font_color_suffix}\n"
-			
-			#=======默认添加一个端口立即启动这个转发=============#
-			# read -e -p "是否继续 添加端口转发配置？[Y/n]:" addyn
-			# [[ -z ${addyn} ]] && addyn="y"
-			# if [[ ${addyn} == [Nn] ]]; then
-			# 	Restart_brook
-			# 	break
-			# else
-			# 	echo -e "${Info} 继续 添加端口转发配置..."
-			# 	user_list_all=""
-			# fi
 			Restart_brook
 			break
 		fi
@@ -485,8 +453,6 @@ Install_brook(){
 	[[ -e ${brook_file} ]] && echo -e "${Error} 检测到 Brook 已安装 !" && exit 1
 	echo -e "${Info} 开始安装/配置 依赖..."
 	Installation_dependency
-	echo -e "${Info} 开始检测最新版本..."
-	check_new_ver
 	echo -e "${Info} 开始下载/安装..."
 	Download_brook
 	echo -e "${Info} 开始下载/安装 服务脚本(init)..."
@@ -779,12 +745,14 @@ net.ipv4.ip_forward = 1">>/etc/sysctl.conf
 	echo "*               soft    nofile           1000000
 *               hard    nofile          1000000">/etc/security/limits.conf
 	echo "ulimit -SHn 1000000">>/etc/profile
-	read -p "需要重启VPS后，才能生效系统优化配置，是否现在重启 ? [Y/n] :" yn
-	[ -z "${yn}" ] && yn="y"
-	if [[ $yn == [Yy] ]]; then
-		echo -e "${Info} VPS 重启中..."
-		reboot
-	fi
+	# read -p "需要重启VPS后，才能生效系统优化配置，是否现在重启 ? [Y/n] :" yn
+	# [ -z "${yn}" ] && yn="y"
+	# if [[ $yn == [Yy] ]]; then
+	# 	echo -e "${Info} VPS 重启中..."
+	# 	reboot
+	# fi
+	echo -e "自动执行重启中....."
+	reboot
 }
 
 
