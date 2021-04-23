@@ -336,7 +336,10 @@ Add_pf(){
 		[[ $? == 0 ]] && echo -e "${Error} 该本地监听端口已使用 [${bk_port}] !" && exit 1
 		Set_IP_pf
 		Set_port_pf
-		Set_pf_Enabled
+		# Set_pf_Enabled
+		# 新增端口立即启用
+		echo -e "新增端口立即自动启用...."
+		bk_Enabled="1"
 		echo "${bk_port} ${bk_ip_pf} ${bk_port_pf} ${bk_Enabled}" >> ${brook_conf}
 		Add_success=$(cat ${brook_conf}| grep ${bk_port})
 		if [[ -z "${Add_success}" ]]; then
