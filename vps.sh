@@ -3,13 +3,15 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
 #=================================================
-#	System Required: CentOS 6/7,Debian 8/9,Ubuntu 16+
+#	System Required: CentOS 7,Debian 8/9,Ubuntu 16+
 #	Description: BBRplus
 #	Version: 8.8.8
 #	Author: AhYuan
-#	Blog: 
+#	Description： Brook版本请手动设置
 #=================================================
 
+
+############### 设置环境变量参数#################
 sh_ver="1.3.2"
 github="raw.githubusercontent.com/kanseaveg/vps/master" 
 
@@ -18,11 +20,7 @@ Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
-
-#====================手动调整最新版本=====================#
-brook_version="v20210401"
-
-#====================From Brook==========================#
+brook_version="v20210401" #手动调整最新版本★★★★★★★★★★★★★★★★★★
 filepath=$(cd "$(dirname "$0")"; pwd)
 file_1=$(echo -e "${filepath}"|awk -F "$0" '{print $1}')
 file="/usr/local/brook-pf"
@@ -32,11 +30,112 @@ brook_log="/usr/local/brook-pf/brook.log"
 Crontab_file="/usr/bin/crontab"
 Curl_file="/usr/bin/curl"
 JQ_file="/usr/bin/jq"
+#=================================================#
 
+
+################### VPS环境校验 #####################
 check_root(){
 	[[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
 }
-check_installed_status(){
+check_pid(){
+	PID=$(ps -ef| grep "brook relays"| grep -v grep| grep -v ".sh"| grep -v "init.d"| grep -v "service"| awk '{print $2}')
+}
+check_sys(){
+	if [[ -f /etc/redhat-release ]]; then
+		release="centos"
+	elif cat /etc/issue | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+	elif cat /proc/version | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /proc/version | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+    fi
+	bit=`uname -m`
+}
+#检查Linux版本
+check_version(){
+	if [[ -s /etc/redhat-release ]]; then
+		version=`grep -oE  "[0-9.]+" /etc/redhat-release | cut -d . -f 1`
+	else
+		version=`grep -oE  "[0-9.]+" /etc/issue | cut -d . -f 1`
+	fi
+	bit=`uname -m`
+	if [[ ${bit} = "x86_64" ]]; then
+		bit="x64"
+	else
+		bit="x32"
+	fi
+}
+##检查安装bbrplus的系统要求
+check_sys_bbrplus(){
+	check_version
+	if [[ "${release}" == "centos" ]]; then
+		if [[ ${version} -ge "6" ]]; then
+			installbbrplus
+		else
+			echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
+		fi
+	elif [[ "${release}" == "debian" ]]; then
+		if [[ ${version} -ge "8" ]]; then
+			installbbrplus
+		else
+			echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
+		fi
+	elif [[ "${release}" == "ubuntu" ]]; then
+		if [[ ${version} -ge "14" ]]; then
+			installbbrplus
+		else
+			echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
+		fi
+	else
+		echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
+	fi
+}
+check_status(){
+	kernel_version=`uname -r | awk -F "-" '{print $1}'`
+	kernel_version_full=`uname -r`
+	if [[ ${kernel_version_full} = "4.14.129-bbrplus" ]]; then
+		kernel_status="BBRplus"
+	elif [[ ${kernel_version} = "3.10.0" || ${kernel_version} = "3.16.0" || ${kernel_version} = "3.2.0" || ${kernel_version} = "4.4.0" || ${kernel_version} = "3.13.0"  || ${kernel_version} = "2.6.32" || ${kernel_version} = "4.9.0" ]]; then
+		kernel_status="Lotserver"
+	else 
+		kernel_status="noinstall"
+	fi
+
+	if [[ ${kernel_status} == "Lotserver" ]]; then
+		if [[ -e /appex/bin/lotServer.sh ]]; then
+			run_status=`bash /appex/bin/lotServer.sh status | grep "LotServer" | awk  '{print $3}'`
+			if [[ ${run_status} = "running!" ]]; then
+				run_status="启动成功"
+			else 
+				run_status="启动失败"
+			fi
+		else 
+			run_status="未安装加速模块"
+		fi
+	elif [[ ${kernel_status} == "BBRplus" ]]; then
+		run_status=`grep "net.ipv4.tcp_congestion_control" /etc/sysctl.conf | awk -F "=" '{print $2}'`
+		if [[ ${run_status} == "bbrplus" ]]; then
+			run_status=`lsmod | grep "bbrplus" | awk '{print $1}'`
+			if [[ ${run_status} == "tcp_bbrplus" ]]; then
+				run_status="BBRplus启动成功"
+			else 
+				run_status="BBRplus启动失败"
+			fi
+		else 
+			run_status="未安装加速模块"
+		fi
+	fi
+}
+
+
+check_installed_status(){ #check brook 
 	[[ ! -e ${brook_file} ]] && echo -e "${Error} Brook 没有安装，请检查 !" && exit 1
 }
 
@@ -56,10 +155,198 @@ check_crontab_installed_status(){
 	fi
 }
 
-check_pid(){
-	PID=$(ps -ef| grep "brook relays"| grep -v grep| grep -v ".sh"| grep -v "init.d"| grep -v "service"| awk '{print $2}')
+#=================================================#
+
+################### BBR PLUS ######################
+#卸载全部加速
+remove_all(){
+	rm -rf bbrmod
+	sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+    sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+    sed -i '/fs.file-max/d' /etc/sysctl.conf
+	sed -i '/net.core.rmem_max/d' /etc/sysctl.conf
+	sed -i '/net.core.wmem_max/d' /etc/sysctl.conf
+	sed -i '/net.core.rmem_default/d' /etc/sysctl.conf
+	sed -i '/net.core.wmem_default/d' /etc/sysctl.conf
+	sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
+	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_tw_reuse/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_tw_recycle/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_fin_timeout/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_keepalive_time/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.ip_local_port_range/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_syn_backlog/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_tw_buckets/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_rmem/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_wmem/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_mtu_probing/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
+	sed -i '/fs.inotify.max_user_instances/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_fin_timeout/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_tw_reuse/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_syn_backlog/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.ip_local_port_range/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_tw_buckets/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.route.gc_timeout/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_synack_retries/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_syn_retries/d' /etc/sysctl.conf
+	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
+	sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_timestamps/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_orphans/d' /etc/sysctl.conf
+	if [[ -e /appex/bin/lotServer.sh ]]; then
+		bash <(wget --no-check-certificate -qO- https://github.com/MoeClub/lotServer/raw/master/Install.sh) uninstall
+	fi
+	clear
+	echo -e "${Info}:清除加速完成。"
+	sleep 1s
+}
+#删除多余内核
+detele_kernel(){
+	if [[ "${release}" == "centos" ]]; then
+		rpm_total=`rpm -qa | grep kernel | grep -v "${kernel_version}" | grep -v "noarch" | wc -l`
+		if [ "${rpm_total}" > "1" ]; then
+			echo -e "检测到 ${rpm_total} 个其余内核，开始卸载..."
+			for((integer = 1; integer <= ${rpm_total}; integer++)); do
+				rpm_del=`rpm -qa | grep kernel | grep -v "${kernel_version}" | grep -v "noarch" | head -${integer}`
+				echo -e "开始卸载 ${rpm_del} 内核..."
+				rpm --nodeps -e ${rpm_del}
+				echo -e "卸载 ${rpm_del} 内核卸载完成，继续..."
+			done
+			echo --nodeps -e "内核卸载完毕，继续..."
+		else
+			echo -e " 检测到 内核 数量不正确，请检查 !" && exit 1
+		fi
+	elif [[ "${release}" == "debian" || "${release}" == "ubuntu" ]]; then
+		deb_total=`dpkg -l | grep linux-image | awk '{print $2}' | grep -v "${kernel_version}" | wc -l`
+		if [ "${deb_total}" > "1" ]; then
+			echo -e "检测到 ${deb_total} 个其余内核，开始卸载..."
+			for((integer = 1; integer <= ${deb_total}; integer++)); do
+				deb_del=`dpkg -l|grep linux-image | awk '{print $2}' | grep -v "${kernel_version}" | head -${integer}`
+				echo -e "开始卸载 ${deb_del} 内核..."
+				apt-get purge -y ${deb_del}
+				echo -e "卸载 ${deb_del} 内核卸载完成，继续..."
+			done
+			echo -e "内核卸载完毕，继续..."
+		else
+			echo -e " 检测到 内核 数量不正确，请检查 !" && exit 1
+		fi
+	fi
+}
+#安装引导
+BBR_grub(){
+	if [[ "${release}" == "centos" ]]; then
+        if [[ ${version} = "6" ]]; then
+            if [ ! -f "/boot/grub/grub.conf" ]; then
+                echo -e "${Error} /boot/grub/grub.conf 找不到，请检查."
+                exit 1
+            fi
+            sed -i 's/^default=.*/default=0/g' /boot/grub/grub.conf
+        elif [[ ${version} = "7" ]]; then
+            if [ ! -f "/boot/grub2/grub.cfg" ]; then
+                echo -e "${Error} /boot/grub2/grub.cfg 找不到，请检查."
+                exit 1
+            fi
+            grub2-set-default 0
+        fi
+    elif [[ "${release}" == "debian" || "${release}" == "ubuntu" ]]; then
+        /usr/sbin/update-grub
+    fi
+}
+#安装BBRplus内核
+installbbrplus(){
+	kernel_version="4.14.129-bbrplus"
+	if [[ "${release}" == "centos" ]]; then
+		wget -N --no-check-certificate https://${github}/bbrplus/${release}/${version}/kernel-${kernel_version}.rpm
+		yum install -y kernel-${kernel_version}.rpm
+		rm -f kernel-${kernel_version}.rpm
+		kernel_version="4.14.129_bbrplus" #fix a bug
+	elif [[ "${release}" == "debian" || "${release}" == "ubuntu" ]]; then
+		mkdir bbrplus && cd bbrplus
+		wget -N --no-check-certificate http://${github}/bbrplus/debian-ubuntu/${bit}/linux-headers-${kernel_version}.deb
+		wget -N --no-check-certificate http://${github}/bbrplus/debian-ubuntu/${bit}/linux-image-${kernel_version}.deb
+		dpkg -i linux-headers-${kernel_version}.deb
+		dpkg -i linux-image-${kernel_version}.deb
+		cd .. && rm -rf bbrplus
+	fi
+	detele_kernel
+	BBR_grub
+	echo -e "${Tip} 重启VPS后，请重新运行脚本开启${Red_font_prefix}BBRplus${Font_color_suffix}"
+	# stty erase '^H' && read -p "需要重启VPS后，才能开启BBRplus，是否现在重启 ? [Y/n] :" yn
+	# [ -z "${yn}" ] && yn="y"
+	# if [[ $yn == [Yy] ]]; then
+	# 	echo -e "${Info} VPS 重启中..."
+	# 	reboot
+	# fi
+    echo -e "自动执行重启中....."
+	reboot
+}
+#优化系统配置
+optimizing_system(){
+	sed -i '/fs.file-max/d' /etc/sysctl.conf
+	sed -i '/fs.inotify.max_user_instances/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_fin_timeout/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_tw_reuse/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_syn_backlog/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.ip_local_port_range/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_tw_buckets/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.route.gc_timeout/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_synack_retries/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_syn_retries/d' /etc/sysctl.conf
+	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
+	sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_timestamps/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.tcp_max_orphans/d' /etc/sysctl.conf
+	sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
+	echo "fs.file-max = 1000000
+fs.inotify.max_user_instances = 8192
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_fin_timeout = 30
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.ip_local_port_range = 1024 65000
+net.ipv4.tcp_max_syn_backlog = 16384
+net.ipv4.tcp_max_tw_buckets = 6000
+net.ipv4.route.gc_timeout = 100
+net.ipv4.tcp_syn_retries = 1
+net.ipv4.tcp_synack_retries = 1
+net.core.somaxconn = 32768
+net.core.netdev_max_backlog = 32768
+net.ipv4.tcp_timestamps = 0
+net.ipv4.tcp_max_orphans = 32768
+# forward ipv4
+net.ipv4.ip_forward = 1">>/etc/sysctl.conf
+	sysctl -p
+	echo "*               soft    nofile           1000000
+*               hard    nofile          1000000">/etc/security/limits.conf
+	echo "ulimit -SHn 1000000">>/etc/profile
+	# read -p "需要重启VPS后，才能生效系统优化配置，是否现在重启 ? [Y/n] :" yn
+	# [ -z "${yn}" ] && yn="y"
+	# if [[ $yn == [Yy] ]]; then
+	# 	echo -e "${Info} VPS 重启中..."
+	# 	reboot
+	# fi
+	echo -e "自动执行重启中....."
+	reboot
+}
+#启用BBRplus
+startbbrplus(){
+	remove_all
+	echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+	echo "net.ipv4.tcp_congestion_control=bbrplus" >> /etc/sysctl.conf
+	sysctl -p
+	echo -e "${Info}BBRplus启动成功！"
 }
 
+#=================================================#
+
+
+
+
+
+################ Brook Installation ###############
 Download_brook(){
 	[[ ! -e ${file} ]] && mkdir ${file}
 	cd ${file}
@@ -76,8 +363,8 @@ Download_brook(){
 	[[ ! -e "brook" ]] && echo -e "${Error} Brook 下载失败 !" && exit 1
 	chmod +x brook
 }
-# Brook管理脚本
-Service_brook(){
+# 下载Brook管理脚本
+Download_brookPF(){
 	if [[ ${release} = "centos" ]]; then
 		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
@@ -94,17 +381,63 @@ Service_brook(){
 	fi
 	echo -e "${Info} Brook服务 管理脚本下载完成 !"
 }
-#同步时间 
+#Brook同步时间 
 Installation_dependency(){
 	\cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 }
-
-Read_config(){
-	[[ ! -e ${brook_conf} ]] && echo -e "${Error} Brook 配置文件不存在 !" && exit 1
-	user_all=$(cat ${brook_conf})
-	user_all_num=$(echo "${user_all}"|wc -l)
-	[[ -z ${user_all} ]] && echo -e "${Error} Brook 配置文件中用户配置为空 !" && exit 1
+Install_brook(){
+	check_root
+	[[ -e ${brook_file} ]] && echo -e "${Error} 检测到 Brook 已安装 !" && exit 1
+	echo -e "${Info} 开始安装/配置 依赖..."
+	Installation_dependency
+	echo -e "${Info} 开始下载/安装..."
+	Download_brook
+	echo -e "${Info} 开始下载/安装 服务脚本(init)..."
+	Download_brookPF
+	echo -e "${Info} 开始写入 配置文件..."
+	echo "" > ${brook_conf}
+	echo -e "${Info} 开始设置 iptables防火墙..."
+	Set_iptables
+	echo -e "${Info} Brook 安装完成！默认配置文件为空，请选择 [10.设置 Brook 端口转发 - 1.添加 端口转发] 来添加端口转发。"
 }
+Uninstall_brook(){
+	check_installed_status
+	echo -e "确定要卸载 Brook ? [y/N]\n"
+	read -e -p "(默认: n):" unyn
+	[[ -z ${unyn} ]] && unyn="n"
+	if [[ ${unyn} == [Yy] ]]; then
+		check_pid
+		[[ ! -z $PID ]] && kill -9 ${PID}
+		if [[ -e ${brook_conf} ]]; then
+			user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
+			user_all_num=$(echo "${user_all}"|wc -l)
+			if [[ ! -z ${user_all} ]]; then
+				for((integer = 1; integer <= ${user_all_num}; integer++))
+				do
+					port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
+					Del_iptables
+				done
+				Save_iptables
+			fi
+		fi
+		if [[ ! -z $(crontab -l | grep "brook-pf.sh monitor") ]]; then
+			crontab_monitor_brook_cron_stop
+		fi
+		rm -rf ${file}
+		if [[ ${release} = "centos" ]]; then
+			chkconfig --del brook-pf
+		else
+			update-rc.d -f brook-pf remove
+		fi
+		rm -rf /etc/init.d/brook-pf
+		echo && echo "Brook 卸载完成 !" && echo
+	else
+		echo && echo "卸载已取消..." && echo
+	fi
+}
+#=================================================#
+
+################## Brook Config ###################
 Set_pf_Enabled(){
 	echo -e "立即启用该端口转发，还是禁用？ [Y/n]"
 	read -e -p "(默认: Y 启用):" pf_Enabled_un
@@ -188,6 +521,7 @@ Set_port_pf(){
 		fi
 		done
 }
+
 Set_brook(){
 	check_installed_status
 	echo && echo -e "你要做什么？
@@ -223,110 +557,8 @@ check_port(){
 		return 1
 	fi
 }
-Check_Proxy_Geo(){
-	echo -e "====当前已设置Brook转发情况===="
-	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
-	if [[ -z "${user_all}" ]]; then
-		echo -e "${Info} 目前 Brook 配置文件中用户配置为空。" && exit 1
-	else
-		user_num=$(echo -e "${user_all}"|wc -l) #端口个数
-		for((integer = 1; integer <= ${user_num}; integer++)) 
-		do
-			user_port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
-			user_ip_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $2}')
-			user_port_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $3}')
-			user_Enabled_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $4}')
-			raw_json=$(curl -sb -v -x socks5h://localhost:${user_port} https://ipapi.co/json)
-			# echo ${raw_json} #set the breakpoint
-			cur_ip=$(echo "${raw_json}" | jq -r '.ip')
-			cur_country_code=$(echo "${raw_json}" | jq -r '.country_code')
-			cur_country_name=$(echo "${raw_json}" | jq -r '.country_name')
-			cur_region=$(echo "${raw_json}" | jq -r '.region')
-			cur_city=$(echo "${raw_json}" | jq -r '.city')
-			cur_timezone=$(echo "${raw_json}" | jq -r '.timezone')
-			cur_lanaguage=$(echo "${raw_json}" | jq -r '.languages')
 
-			if [[ ${user_Enabled_pf} == "0" ]]; then
-				user_Enabled_pf_1="${Red_font_prefix}禁用${Font_color_suffix}"
-			else
-				user_Enabled_pf_1="${Green_font_prefix}启用${Font_color_suffix}"
-			fi
-			user_list_all=${user_list_all}"本地端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix} 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix} 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix} 状态: ${user_Enabled_pf_1} 当前IP：${Green_font_prefix}"${cur_ip}"${Font_color_suffix}  国家代码：${Green_font_prefix}"${cur_country_code}"${Font_color_suffix}  国家：${Green_font_prefix}"${cur_country_name}"${Font_color_suffix} 郡Region：${Green_font_prefix}"${cur_region}"${Font_color_suffix}   城市：${Green_font_prefix}"${cur_city}"${Font_color_suffix}  时区：${Green_font_prefix}"${cur_timezone}"${Font_color_suffix}  语言：${Green_font_prefix}"${cur_lanaguage}"${Font_color_suffix}\n"
-			user_IP=""
-		done
-		echo -e "${user_list_all}"
-		echo -e "========================\n"
-	fi
-
-}
-
-
-list_port(){
-	if [[ ! -e ${Curl_file} ]]; then
-		echo -e "${Error} Curl 没有安装，开始安装..."
-		if [[ ${release} == "centos" ]]; then
-			yum install curl -y
-		else
-			apt-get install curl -y
-		fi
-		if [[ ! -e ${Curl_file} ]]; then
-			echo -e "${Error} Curl 安装失败，请记得检查！" 
-		else
-			echo -e "${Info} Curl 安装成功！"
-		fi
-	fi
-	if [[ ! -e ${JQ_file} ]]; then
-		echo -e "${Error} jq json解析工具 没有安装，开始安装..."
-		if [[ ${release} == "centos" ]]; then
-			yum install jq -y
-		else
-			apt-get install jq -y
-		fi
-		if [[ ! -e ${JQ_file} ]]; then
-			echo -e "${Error} jq  安装失败，请记得检查！" 
-		else
-			echo -e "${Info} jq 安装成功！"
-		fi
-	fi
-	port_Type=$1
-	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
-	if [[ -z "${user_all}" ]]; then
-		if [[ "${port_Type}" == "ADD" ]]; then
-			echo -e "${Info} 目前 Brook 配置文件中用户配置为空。"
-		else
-			echo -e "${Info} 目前 Brook 配置文件中用户配置为空。" && exit 1
-		fi
-	else
-		user_num=$(echo -e "${user_all}"|wc -l)
-		for((integer = 1; integer <= ${user_num}; integer++))
-		do
-			user_port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
-			user_ip_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $2}')
-			user_port_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $3}')
-			user_Enabled_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $4}')
-			if [[ ${user_Enabled_pf} == "0" ]]; then
-				user_Enabled_pf_1="${Red_font_prefix}禁用${Font_color_suffix}"
-			else
-				user_Enabled_pf_1="${Green_font_prefix}启用${Font_color_suffix}"
-			fi
-			user_list_all=${user_list_all}"本地监听端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix}\t 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix}\t 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix}\t 状态: ${user_Enabled_pf_1}\n"
-			user_IP=""
-		done
-		ip=$(wget -qO- -t1 -T2 ipinfo.io/ip)
-		if [[ -z "${ip}" ]]; then
-			ip=$(wget -qO- -t1 -T2 api.ip.sb/ip)
-			if [[ -z "${ip}" ]]; then
-				ip=$(wget -qO- -t1 -T2 members.3322.org/dyndns/getip)
-				if [[ -z "${ip}" ]]; then
-					ip="VPS_IP"
-				fi
-			fi
-		fi
-		echo -e "当前端口转发总数: ${Green_background_prefix} "${user_num}" ${Font_color_suffix} 当前服务器IP: ${Green_background_prefix} "${ip}" ${Font_color_suffix}"
-		echo -e "${user_list_all}"
-		echo -e "========================\n"
-	fi
-}
+#========Brook转发四种管理方式========
 Add_pf(){
 	while true
 	do
@@ -466,21 +698,11 @@ Modify_Enabled_pf(){
 		fi
 	fi
 }
-Install_brook(){
-	check_root
-	[[ -e ${brook_file} ]] && echo -e "${Error} 检测到 Brook 已安装 !" && exit 1
-	echo -e "${Info} 开始安装/配置 依赖..."
-	Installation_dependency
-	echo -e "${Info} 开始下载/安装..."
-	Download_brook
-	echo -e "${Info} 开始下载/安装 服务脚本(init)..."
-	Service_brook
-	echo -e "${Info} 开始写入 配置文件..."
-	echo "" > ${brook_conf}
-	echo -e "${Info} 开始设置 iptables防火墙..."
-	Set_iptables
-	echo -e "${Info} Brook 安装完成！默认配置文件为空，请选择 [10.设置 Brook 端口转发 - 1.添加 端口转发] 来添加端口转发。"
-}
+
+#=================================================#
+
+
+#################### Brook Status #################
 Start_brook(){
 	check_installed_status
 	check_pid
@@ -498,41 +720,6 @@ Restart_brook(){
 	check_pid
 	[[ ! -z ${PID} ]] && /etc/init.d/brook-pf stop
 	/etc/init.d/brook-pf start
-}
-Uninstall_brook(){
-	check_installed_status
-	echo -e "确定要卸载 Brook ? [y/N]\n"
-	read -e -p "(默认: n):" unyn
-	[[ -z ${unyn} ]] && unyn="n"
-	if [[ ${unyn} == [Yy] ]]; then
-		check_pid
-		[[ ! -z $PID ]] && kill -9 ${PID}
-		if [[ -e ${brook_conf} ]]; then
-			user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
-			user_all_num=$(echo "${user_all}"|wc -l)
-			if [[ ! -z ${user_all} ]]; then
-				for((integer = 1; integer <= ${user_all_num}; integer++))
-				do
-					port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
-					Del_iptables
-				done
-				Save_iptables
-			fi
-		fi
-		if [[ ! -z $(crontab -l | grep "brook-pf.sh monitor") ]]; then
-			crontab_monitor_brook_cron_stop
-		fi
-		rm -rf ${file}
-		if [[ ${release} = "centos" ]]; then
-			chkconfig --del brook-pf
-		else
-			update-rc.d -f brook-pf remove
-		fi
-		rm -rf /etc/init.d/brook-pf
-		echo && echo "Brook 卸载完成 !" && echo
-	else
-		echo && echo "卸载已取消..." && echo
-	fi
 }
 View_Log(){
 	check_installed_status
@@ -609,6 +796,8 @@ crontab_monitor_brook(){
 		echo -e "${Info} [$(date "+%Y-%m-%d %H:%M:%S %u %Z")] Brook服务端 进程运行正常..." | tee -a ${brook_log}
 	fi
 }
+
+####iptables设置
 Add_iptables(){
 	iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${bk_port} -j ACCEPT
 	iptables -I INPUT -m state --state NEW -m udp -p udp --dport ${bk_port} -j ACCEPT
@@ -634,149 +823,128 @@ Set_iptables(){
 		chmod +x /etc/network/if-pre-up.d/iptables
 	fi
 }
-
-
-#====================From Brook==========================#
-
-#安装BBRplus内核
-installbbrplus(){
-	kernel_version="4.14.129-bbrplus"
-	if [[ "${release}" == "centos" ]]; then
-		wget -N --no-check-certificate https://${github}/bbrplus/${release}/${version}/kernel-${kernel_version}.rpm
-		yum install -y kernel-${kernel_version}.rpm
-		rm -f kernel-${kernel_version}.rpm
-		kernel_version="4.14.129_bbrplus" #fix a bug
-	elif [[ "${release}" == "debian" || "${release}" == "ubuntu" ]]; then
-		mkdir bbrplus && cd bbrplus
-		wget -N --no-check-certificate http://${github}/bbrplus/debian-ubuntu/${bit}/linux-headers-${kernel_version}.deb
-		wget -N --no-check-certificate http://${github}/bbrplus/debian-ubuntu/${bit}/linux-image-${kernel_version}.deb
-		dpkg -i linux-headers-${kernel_version}.deb
-		dpkg -i linux-image-${kernel_version}.deb
-		cd .. && rm -rf bbrplus
+list_port(){
+	if [[ ! -e ${Curl_file} ]]; then
+		echo -e "${Error} Curl 没有安装，开始安装..."
+		if [[ ${release} == "centos" ]]; then
+			yum install curl -y
+		else
+			apt-get install curl -y
+		fi
+		if [[ ! -e ${Curl_file} ]]; then
+			echo -e "${Error} Curl 安装失败，请记得检查！" 
+		else
+			echo -e "${Info} Curl 安装成功！"
+		fi
 	fi
-	detele_kernel
-	BBR_grub
-	echo -e "${Tip} 重启VPS后，请重新运行脚本开启${Red_font_prefix}BBRplus${Font_color_suffix}"
-	stty erase '^H' && read -p "需要重启VPS后，才能开启BBRplus，是否现在重启 ? [Y/n] :" yn
-	[ -z "${yn}" ] && yn="y"
-	if [[ $yn == [Yy] ]]; then
-		echo -e "${Info} VPS 重启中..."
-		reboot
+	if [[ ! -e ${JQ_file} ]]; then
+		echo -e "${Error} jq json解析工具 没有安装，开始安装..."
+		if [[ ${release} == "centos" ]]; then
+			yum install jq -y
+		else
+			apt-get install jq -y
+		fi
+		if [[ ! -e ${JQ_file} ]]; then
+			echo -e "${Error} jq  安装失败，请记得检查！" 
+		else
+			echo -e "${Info} jq 安装成功！"
+		fi
+	fi
+	port_Type=$1
+	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
+	if [[ -z "${user_all}" ]]; then
+		if [[ "${port_Type}" == "ADD" ]]; then
+			echo -e "${Info} 目前 Brook 配置文件中用户配置为空。"
+		else
+			echo -e "${Info} 目前 Brook 配置文件中用户配置为空。" && exit 1
+		fi
+	else
+		user_num=$(echo -e "${user_all}"|wc -l)
+		for((integer = 1; integer <= ${user_num}; integer++))
+		do
+			user_port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
+			user_ip_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $2}')
+			user_port_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $3}')
+			user_Enabled_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $4}')
+			if [[ ${user_Enabled_pf} == "0" ]]; then
+				user_Enabled_pf_1="${Red_font_prefix}禁用${Font_color_suffix}"
+			else
+				user_Enabled_pf_1="${Green_font_prefix}启用${Font_color_suffix}"
+			fi
+			user_list_all=${user_list_all}"本地监听端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix}\t 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix}\t 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix}\t 状态: ${user_Enabled_pf_1}\n"
+			user_IP=""
+		done
+		ip=$(wget -qO- -t1 -T2 ipinfo.io/ip)
+		if [[ -z "${ip}" ]]; then
+			ip=$(wget -qO- -t1 -T2 api.ip.sb/ip)
+			if [[ -z "${ip}" ]]; then
+				ip=$(wget -qO- -t1 -T2 members.3322.org/dyndns/getip)
+				if [[ -z "${ip}" ]]; then
+					ip="VPS_IP"
+				fi
+			fi
+		fi
+		echo -e "当前端口转发总数: ${Green_background_prefix} "${user_num}" ${Font_color_suffix} 当前服务器IP: ${Green_background_prefix} "${ip}" ${Font_color_suffix}"
+		echo -e "${user_list_all}"
+		echo -e "========================\n"
 	fi
 }
+Check_Proxy_Geo(){
+	echo -e "====当前已设置Brook转发情况===="
+	user_all=$(cat ${brook_conf}|sed '/^\s*$/d')
+	if [[ -z "${user_all}" ]]; then
+		echo -e "${Info} 目前 Brook 配置文件中用户配置为空。" && exit 1
+	else
+		user_num=$(echo -e "${user_all}"|wc -l) #端口个数
+		for((integer = 1; integer <= ${user_num}; integer++)) 
+		do
+			user_port=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $1}')
+			user_ip_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $2}')
+			user_port_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $3}')
+			user_Enabled_pf=$(echo "${user_all}"|sed -n "${integer}p"|awk '{print $4}')
+			raw_json=$(curl -sb -v -x socks5h://localhost:${user_port} https://ipapi.co/json)
+			# echo ${raw_json} #set the breakpoint
+			cur_ip=$(echo "${raw_json}" | jq -r '.ip')
+			cur_country_code=$(echo "${raw_json}" | jq -r '.country_code')
+			cur_country_name=$(echo "${raw_json}" | jq -r '.country_name')
+			cur_region=$(echo "${raw_json}" | jq -r '.region')
+			cur_city=$(echo "${raw_json}" | jq -r '.city')
+			cur_timezone=$(echo "${raw_json}" | jq -r '.timezone')
+			cur_lanaguage=$(echo "${raw_json}" | jq -r '.languages')
 
-
-#启用BBRplus
-startbbrplus(){
-	remove_all
-	echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-	echo "net.ipv4.tcp_congestion_control=bbrplus" >> /etc/sysctl.conf
-	sysctl -p
-	echo -e "${Info}BBRplus启动成功！"
-}
-
-
-
-
-#卸载全部加速
-remove_all(){
-	rm -rf bbrmod
-	sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
-    sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
-    sed -i '/fs.file-max/d' /etc/sysctl.conf
-	sed -i '/net.core.rmem_max/d' /etc/sysctl.conf
-	sed -i '/net.core.wmem_max/d' /etc/sysctl.conf
-	sed -i '/net.core.rmem_default/d' /etc/sysctl.conf
-	sed -i '/net.core.wmem_default/d' /etc/sysctl.conf
-	sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
-	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_tw_reuse/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_tw_recycle/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_fin_timeout/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_keepalive_time/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.ip_local_port_range/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_syn_backlog/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_tw_buckets/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_rmem/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_wmem/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_mtu_probing/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
-	sed -i '/fs.inotify.max_user_instances/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_fin_timeout/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_tw_reuse/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_syn_backlog/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.ip_local_port_range/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_tw_buckets/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.route.gc_timeout/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_synack_retries/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_syn_retries/d' /etc/sysctl.conf
-	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
-	sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_timestamps/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_orphans/d' /etc/sysctl.conf
-	if [[ -e /appex/bin/lotServer.sh ]]; then
-		bash <(wget --no-check-certificate -qO- https://github.com/MoeClub/lotServer/raw/master/Install.sh) uninstall
+			if [[ ${user_Enabled_pf} == "0" ]]; then
+				user_Enabled_pf_1="${Red_font_prefix}禁用${Font_color_suffix}"
+			else
+				user_Enabled_pf_1="${Green_font_prefix}启用${Font_color_suffix}"
+			fi
+			user_list_all=${user_list_all}"本地端口: ${Green_font_prefix}"${user_port}"${Font_color_suffix} 被转发IP: ${Green_font_prefix}"${user_ip_pf}"${Font_color_suffix} 被转发端口: ${Green_font_prefix}"${user_port_pf}"${Font_color_suffix} 状态: ${user_Enabled_pf_1} 当前IP：${Green_font_prefix}"${cur_ip}"${Font_color_suffix}  国家代码：${Green_font_prefix}"${cur_country_code}"${Font_color_suffix}  国家：${Green_font_prefix}"${cur_country_name}"${Font_color_suffix} 郡Region：${Green_font_prefix}"${cur_region}"${Font_color_suffix}   城市：${Green_font_prefix}"${cur_city}"${Font_color_suffix}  时区：${Green_font_prefix}"${cur_timezone}"${Font_color_suffix}  语言：${Green_font_prefix}"${cur_lanaguage}"${Font_color_suffix}\n"
+			user_IP=""
+		done
+		echo -e "${user_list_all}"
+		echo -e "========================\n"
 	fi
-	clear
-	echo -e "${Info}:清除加速完成。"
-	sleep 1s
+
 }
-
-#优化系统配置
-optimizing_system(){
-	sed -i '/fs.file-max/d' /etc/sysctl.conf
-	sed -i '/fs.inotify.max_user_instances/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_fin_timeout/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_tw_reuse/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_syn_backlog/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.ip_local_port_range/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_tw_buckets/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.route.gc_timeout/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_synack_retries/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_syn_retries/d' /etc/sysctl.conf
-	sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
-	sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_timestamps/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.tcp_max_orphans/d' /etc/sysctl.conf
-	sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
-	echo "fs.file-max = 1000000
-fs.inotify.max_user_instances = 8192
-net.ipv4.tcp_syncookies = 1
-net.ipv4.tcp_fin_timeout = 30
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.ip_local_port_range = 1024 65000
-net.ipv4.tcp_max_syn_backlog = 16384
-net.ipv4.tcp_max_tw_buckets = 6000
-net.ipv4.route.gc_timeout = 100
-net.ipv4.tcp_syn_retries = 1
-net.ipv4.tcp_synack_retries = 1
-net.core.somaxconn = 32768
-net.core.netdev_max_backlog = 32768
-net.ipv4.tcp_timestamps = 0
-net.ipv4.tcp_max_orphans = 32768
-# forward ipv4
-net.ipv4.ip_forward = 1">>/etc/sysctl.conf
-	sysctl -p
-	echo "*               soft    nofile           1000000
-*               hard    nofile          1000000">/etc/security/limits.conf
-	echo "ulimit -SHn 1000000">>/etc/profile
-	# read -p "需要重启VPS后，才能生效系统优化配置，是否现在重启 ? [Y/n] :" yn
-	# [ -z "${yn}" ] && yn="y"
-	# if [[ $yn == [Yy] ]]; then
-	# 	echo -e "${Info} VPS 重启中..."
-	# 	reboot
-	# fi
-	echo -e "自动执行重启中....."
-	reboot
-}
+#=================================================#
 
 
 
 
-#开始菜单
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################## Start Menu ###################
 start_menu(){
 clear
 echo && echo -e " TCP加速 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
@@ -874,175 +1042,6 @@ esac
 }
 
 
-
-
-
-#############内核管理组件#############
-
-#删除多余内核
-detele_kernel(){
-	if [[ "${release}" == "centos" ]]; then
-		rpm_total=`rpm -qa | grep kernel | grep -v "${kernel_version}" | grep -v "noarch" | wc -l`
-		if [ "${rpm_total}" > "1" ]; then
-			echo -e "检测到 ${rpm_total} 个其余内核，开始卸载..."
-			for((integer = 1; integer <= ${rpm_total}; integer++)); do
-				rpm_del=`rpm -qa | grep kernel | grep -v "${kernel_version}" | grep -v "noarch" | head -${integer}`
-				echo -e "开始卸载 ${rpm_del} 内核..."
-				rpm --nodeps -e ${rpm_del}
-				echo -e "卸载 ${rpm_del} 内核卸载完成，继续..."
-			done
-			echo --nodeps -e "内核卸载完毕，继续..."
-		else
-			echo -e " 检测到 内核 数量不正确，请检查 !" && exit 1
-		fi
-	elif [[ "${release}" == "debian" || "${release}" == "ubuntu" ]]; then
-		deb_total=`dpkg -l | grep linux-image | awk '{print $2}' | grep -v "${kernel_version}" | wc -l`
-		if [ "${deb_total}" > "1" ]; then
-			echo -e "检测到 ${deb_total} 个其余内核，开始卸载..."
-			for((integer = 1; integer <= ${deb_total}; integer++)); do
-				deb_del=`dpkg -l|grep linux-image | awk '{print $2}' | grep -v "${kernel_version}" | head -${integer}`
-				echo -e "开始卸载 ${deb_del} 内核..."
-				apt-get purge -y ${deb_del}
-				echo -e "卸载 ${deb_del} 内核卸载完成，继续..."
-			done
-			echo -e "内核卸载完毕，继续..."
-		else
-			echo -e " 检测到 内核 数量不正确，请检查 !" && exit 1
-		fi
-	fi
-}
-
-#更新引导
-BBR_grub(){
-	if [[ "${release}" == "centos" ]]; then
-        if [[ ${version} = "6" ]]; then
-            if [ ! -f "/boot/grub/grub.conf" ]; then
-                echo -e "${Error} /boot/grub/grub.conf 找不到，请检查."
-                exit 1
-            fi
-            sed -i 's/^default=.*/default=0/g' /boot/grub/grub.conf
-        elif [[ ${version} = "7" ]]; then
-            if [ ! -f "/boot/grub2/grub.cfg" ]; then
-                echo -e "${Error} /boot/grub2/grub.cfg 找不到，请检查."
-                exit 1
-            fi
-            grub2-set-default 0
-        fi
-    elif [[ "${release}" == "debian" || "${release}" == "ubuntu" ]]; then
-        /usr/sbin/update-grub
-    fi
-}
-
-#############内核管理组件#############
-
-
-
-#############系统检测组件#############
-
-#检查系统
-check_sys(){
-	if [[ -f /etc/redhat-release ]]; then
-		release="centos"
-	elif cat /etc/issue | grep -q -E -i "debian"; then
-		release="debian"
-	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
-		release="ubuntu"
-	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
-		release="centos"
-	elif cat /proc/version | grep -q -E -i "debian"; then
-		release="debian"
-	elif cat /proc/version | grep -q -E -i "ubuntu"; then
-		release="ubuntu"
-	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
-		release="centos"
-    fi
-	bit=`uname -m`
-}
-
-#检查Linux版本
-check_version(){
-	if [[ -s /etc/redhat-release ]]; then
-		version=`grep -oE  "[0-9.]+" /etc/redhat-release | cut -d . -f 1`
-	else
-		version=`grep -oE  "[0-9.]+" /etc/issue | cut -d . -f 1`
-	fi
-	bit=`uname -m`
-	if [[ ${bit} = "x86_64" ]]; then
-		bit="x64"
-	else
-		bit="x32"
-	fi
-}
-
-
-
-##检查安装bbrplus的系统要求
-check_sys_bbrplus(){
-	check_version
-	if [[ "${release}" == "centos" ]]; then
-		if [[ ${version} -ge "6" ]]; then
-			installbbrplus
-		else
-			echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
-		fi
-	elif [[ "${release}" == "debian" ]]; then
-		if [[ ${version} -ge "8" ]]; then
-			installbbrplus
-		else
-			echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
-		fi
-	elif [[ "${release}" == "ubuntu" ]]; then
-		if [[ ${version} -ge "14" ]]; then
-			installbbrplus
-		else
-			echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
-		fi
-	else
-		echo -e "${Error} BBRplus内核不支持当前系统 ${release} ${version} ${bit} !" && exit 1
-	fi
-}
-
-
-
-
-check_status(){
-	kernel_version=`uname -r | awk -F "-" '{print $1}'`
-	kernel_version_full=`uname -r`
-	if [[ ${kernel_version_full} = "4.14.129-bbrplus" ]]; then
-		kernel_status="BBRplus"
-	elif [[ ${kernel_version} = "3.10.0" || ${kernel_version} = "3.16.0" || ${kernel_version} = "3.2.0" || ${kernel_version} = "4.4.0" || ${kernel_version} = "3.13.0"  || ${kernel_version} = "2.6.32" || ${kernel_version} = "4.9.0" ]]; then
-		kernel_status="Lotserver"
-	else 
-		kernel_status="noinstall"
-	fi
-
-	if [[ ${kernel_status} == "Lotserver" ]]; then
-		if [[ -e /appex/bin/lotServer.sh ]]; then
-			run_status=`bash /appex/bin/lotServer.sh status | grep "LotServer" | awk  '{print $3}'`
-			if [[ ${run_status} = "running!" ]]; then
-				run_status="启动成功"
-			else 
-				run_status="启动失败"
-			fi
-		else 
-			run_status="未安装加速模块"
-		fi
-	elif [[ ${kernel_status} == "BBRplus" ]]; then
-		run_status=`grep "net.ipv4.tcp_congestion_control" /etc/sysctl.conf | awk -F "=" '{print $2}'`
-		if [[ ${run_status} == "bbrplus" ]]; then
-			run_status=`lsmod | grep "bbrplus" | awk '{print $1}'`
-			if [[ ${run_status} == "tcp_bbrplus" ]]; then
-				run_status="BBRplus启动成功"
-			else 
-				run_status="BBRplus启动失败"
-			fi
-		else 
-			run_status="未安装加速模块"
-		fi
-	fi
-}
-
-#############系统检测组件#############
 check_sys
 action=$1
 check_version
@@ -1050,6 +1049,11 @@ check_version
 if [[ "${action}" == "monitor" ]]; then
 	crontab_monitor_brook
 else
-	start_menu
+	start_menu #the future
 fi
+
+
+
+
+
 
