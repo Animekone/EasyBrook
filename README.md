@@ -1,4 +1,4 @@
-# Linux-VPS-BBrPlus-With-Brook
+# Easybrook
 
 #### HOW TO USE
 
