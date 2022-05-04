@@ -3,7 +3,7 @@
 #### HOW TO USE
 
 ```
-wget -N --no-check-certificate -qO brook.sh https://raw.githubusercontent.com/Animekone/EasBrook/master/brook.sh && chmod +x brook.sh && ./brook.sh
+wget -N --no-check-certificate -qO brook.sh https://raw.githubusercontent.com/Animekone/EasyBrook/master/brook.sh && chmod +x brook.sh && ./brook.sh
 ```
 
 #### DONE
