@@ -1050,3 +1050,4 @@ if [[ "${action}" == "monitor" ]]; then
 else
 	start_menu #the future
 fi
+
