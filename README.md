@@ -1,10 +1,9 @@
-# Easybrook
+# EasyBrook
 
 #### HOW TO USE
 
 ```
-wget -N --no-check-certificate "https://github.com/kanseaveg/easybrook.git" && chmod +x vps.sh && ./vps.sh
-./vps.sh
+wget -N --no-check-certificate -qO brook.sh https://raw.githubusercontent.com/kanseaveg/easybrook/master/brook.sh && chmod +x brook.sh && ./brook.sh
 ```
 
 #### DONE
