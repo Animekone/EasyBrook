@@ -12,7 +12,7 @@ export PATH
 
 ############### 设置环境变量参数#################
 sh_ver="1.3.2"
-github="raw.githubusercontent.com/kanseaveg/vps/master" 
+github="raw.githubusercontent.com/kAnimekone/EasyBrook/master" 
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
@@ -365,14 +365,14 @@ Download_brook(){
 # 下载Brook管理脚本
 Download_brookPF(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/Animekone/EasyBrook/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/brook-pf
 		chkconfig --add brook-pf
 		chkconfig brook-pf on
 	else
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_debian -O /etc/init.d/brook-pf; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/Animekone/EasyBrook/service/brook-pf_debian -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/brook-pf
