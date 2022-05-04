@@ -10,9 +10,10 @@ export PATH
 #	Description： Brook版本请手动设置
 #=================================================
 
+
 ############### 设置环境变量参数#################
 sh_ver="1.3.2"
-github="raw.githubusercontent.com/kAnimekone/EasyBrook/master" 
+github="raw.githubusercontent.com/kanseaveg/vps/master" 
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
@@ -365,14 +366,14 @@ Download_brook(){
 # 下载Brook管理脚本
 Download_brookPF(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/Animekone/EasyBrook/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/brook-pf
 		chkconfig --add brook-pf
 		chkconfig brook-pf on
 	else
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/Animekone/EasyBrook/service/brook-pf_debian -O /etc/init.d/brook-pf; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_debian -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/brook-pf
@@ -961,17 +962,13 @@ ${Green_font_prefix} 6.${Font_color_suffix} 卸载 Brook
 ${Green_font_prefix} 7.${Font_color_suffix} 启动 Brook
 ${Green_font_prefix} 8.${Font_color_suffix} 停止 Brook
 ${Green_font_prefix} 9.${Font_color_suffix} 重启 Brook
-
 ———————————— 管理端口加速 | 端口服务管理 ————————————
 ${Green_font_prefix} 10.${Font_color_suffix} 设置 Brook 端口转发
 ${Green_font_prefix} 11.${Font_color_suffix} 查看 Brook 端口转发列表
 ${Green_font_prefix} 12.${Font_color_suffix} 查看 Brook 日志
 ${Green_font_prefix} 13.${Font_color_suffix} 监控 Brook 运行状态
-
 ———————————— 服务商连通性测试 | 代理管理 ————————————
 ${Green_font_prefix} 14.${Font_color_suffix} 测试跳板机到服务商服务连通性
-
-
 ${Green_font_prefix} 15.${Font_color_suffix} 退出脚本
 ————————————————————————————————" && echo
 
@@ -1050,4 +1047,9 @@ if [[ "${action}" == "monitor" ]]; then
 else
 	start_menu #the future
 fi
+
+
+
+
+
 
