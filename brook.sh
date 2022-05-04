@@ -10,10 +10,9 @@ export PATH
 #	Description： Brook版本请手动设置
 #=================================================
 
-
 ############### 设置环境变量参数#################
 sh_ver="1.3.2"
-github="raw.githubusercontent.com/kanseaveg/vps/master" 
+github="raw.githubusercontent.com/Animekone/EasyBrook/master" 
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
@@ -33,7 +32,7 @@ JQ_file="/usr/bin/jq"
 #=================================================#
 
 
-################### VPS环境校验 #####################
+################### vps环境校验 #####################
 check_root(){
 	[[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
 }
@@ -366,14 +365,14 @@ Download_brook(){
 # 下载Brook管理脚本
 Download_brookPF(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/Animekone/EasyBrook/master/service/brook-pf_centos -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/brook-pf
 		chkconfig --add brook-pf
 		chkconfig brook-pf on
 	else
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/kanseaveg/vps/master/service/brook-pf_debian -O /etc/init.d/brook-pf; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/Animekone/EasyBrook/master/service/brook-pf_debian -O /etc/init.d/brook-pf; then
 			echo -e "${Error} Brook服务 管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/brook-pf
@@ -1047,9 +1046,3 @@ if [[ "${action}" == "monitor" ]]; then
 else
 	start_menu #the future
 fi
-
-
-
-
-
-
