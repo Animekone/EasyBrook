@@ -10,7 +10,6 @@ export PATH
 #	Description： Brook版本请手动设置
 #=================================================
 
-
 ############### 设置环境变量参数#################
 sh_ver="1.3.2"
 github="raw.githubusercontent.com/kanseaveg/vps/master" 
@@ -1051,9 +1050,3 @@ if [[ "${action}" == "monitor" ]]; then
 else
 	start_menu #the future
 fi
-
-
-
-
-
-
